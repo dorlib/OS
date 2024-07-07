@@ -1,0 +1,4 @@
+/Users/intel-mac/Desktop/CLion.app/Contents/bin/cmake/mac/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Users/intel-mac/Desktop/CLion.app/Contents/bin/ninja/mac/ninja -G Ninja -S /Users/intel-mac/Desktop/private/os/hw1 -B /Users/intel-mac/Desktop/private/os/hw1/cmake-build-debug
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /Users/intel-mac/Desktop/private/os/hw1/cmake-build-debug

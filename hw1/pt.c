@@ -4,10 +4,10 @@
 #include <err.h>
 
 void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
+    const uint64_t VALID_BIT_MASK = 1;
     uint64_t vpn_indices[5];
     uint64_t* page_table_pointers[5];
     pt = pt << 12; // now pt holds the page table's address.
-    const uint64_t VALID_BIT_MASK = 1;
 
     for (int i = 0; i < 5; i++) {
         vpn_indices[i] = (vpn >> (36 - (9 * i))) & 0x1FF;
@@ -15,7 +15,7 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
 
     page_table_pointers[0]  = (uint64_t*)(phys_to_virt(pt));
     if (page_table_pointers[0] == NULL) {
-        fprintf(stderr, "Failed to convert physical address to virtual address for root page table.\n");
+        fprintf(stderr, "Error! Failed to convert physical address to virtual address.\n");
         return;
     }
 
@@ -72,6 +72,7 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
 }
 
 uint64_t page_table_query(uint64_t pt, uint64_t vpn){
+    const uint64_t VALID_BIT_MASK = 1;
     uint64_t* page_table_pointers[5];
     uint64_t vpn_indices[5];
     pt = pt<<12;
@@ -91,7 +92,7 @@ uint64_t page_table_query(uint64_t pt, uint64_t vpn){
     }
 
     uint64_t valid_bit = page_table_pointers[4][vpn_indices[4]];
-    if ((valid_bit & 1) == 0 || valid_bit == NO_MAPPING) {
+    if ((valid_bit & VALID_BIT_MASK) == 0 || valid_bit == NO_MAPPING) {
         return NO_MAPPING;
     }
 

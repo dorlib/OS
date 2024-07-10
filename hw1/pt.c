@@ -1,7 +1,6 @@
 #include "os.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include <err.h>
 
 void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
     const uint64_t VALID_BIT = 1;
@@ -16,7 +15,7 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
     page_table_pointers[0]  = (uint64_t*)(phys_to_virt(pt));
     if (page_table_pointers[0] == NULL) {
         fprintf(stderr, "Error! Failed to convert physical address to virtual address.\n");
-        return;
+        exit(EXIT_FAILURE); // Exit on failure
     }
 
     if (ppn == NO_MAPPING) {
@@ -27,8 +26,8 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
             page_table_pointers[i + 1] = (uint64_t*)virtual_address;
 
             if (page_table_pointers[i + 1] == NULL || (current_entry & VALID_BIT) == 0) {
-                fprintf(stderr, "Invalid or NULL page table entry at level %d.\n", i);
-                return;
+                fprintf(stderr, "Error! Invalid or NULL page table entry at level %d.\n", i);
+                exit(EXIT_FAILURE); // Exit on failure
             }
         }
 
@@ -36,8 +35,8 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
     } else {
         for (int i = 0; i < 4; i++) {
             if (!page_table_pointers[i]) {
-                fprintf(stderr, "NULL pointer encountered at level %d.\n", i);
-                return;
+                fprintf(stderr, "Error! NULL pointer encountered at level %d.\n", i);
+                exit(EXIT_FAILURE); // Exit on failure
             }
 
             uint64_t current_entry = page_table_pointers[i][vpn_indices[i]];
@@ -46,8 +45,8 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
                 uint64_t new_frame = alloc_page_frame();
 
                 if (new_frame == 0) {
-                    fprintf(stderr, "Failed to allocate new page frame at level %d.\n", i);
-                    return;
+                    fprintf(stderr, "Error! Failed to allocate new page frame at level %d.\n", i);
+                    exit(EXIT_FAILURE); // Exit on failure
                 }
 
                 uint64_t aligned_frame = new_frame << 12;
@@ -60,8 +59,8 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
             void* virtual_address = phys_to_virt(physical_address);
 
             if (virtual_address == NULL) {
-                fprintf(stderr, "Failed to convert physical address to virtual address at level %d.\n", i);
-                return;
+                fprintf(stderr, "Error! Failed to convert physical address to virtual address at level %d.\n", i);
+                exit(EXIT_FAILURE); // Exit on failure
             }
 
             page_table_pointers[i + 1] = (uint64_t*)virtual_address;

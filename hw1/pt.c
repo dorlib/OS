@@ -4,7 +4,7 @@
 #include <err.h>
 
 void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
-    const uint64_t VALID_BIT_MASK = 1;
+    const uint64_t VALID_BIT = 1;
     uint64_t vpn_indices[5];
     uint64_t* page_table_pointers[5];
     pt = pt << 12; // now pt holds the page table's address.
@@ -26,7 +26,7 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
             void* virtual_address = phys_to_virt(physical_address);
             page_table_pointers[i + 1] = (uint64_t*)virtual_address;
 
-            if (page_table_pointers[i + 1] == NULL || (current_entry & VALID_BIT_MASK) == 0) {
+            if (page_table_pointers[i + 1] == NULL || (current_entry & VALID_BIT) == 0) {
                 fprintf(stderr, "Invalid or NULL page table entry at level %d.\n", i);
                 return;
             }
@@ -42,7 +42,7 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
 
             uint64_t current_entry = page_table_pointers[i][vpn_indices[i]];
 
-            if (current_entry == NO_MAPPING || (current_entry & VALID_BIT_MASK) == 0) {
+            if (current_entry == NO_MAPPING || (current_entry & VALID_BIT) == 0) {
                 uint64_t new_frame = alloc_page_frame();
 
                 if (new_frame == 0) {
@@ -72,7 +72,7 @@ void page_table_update(uint64_t pt, uint64_t vpn, uint64_t ppn){
 }
 
 uint64_t page_table_query(uint64_t pt, uint64_t vpn){
-    const uint64_t VALID_BIT_MASK = 1;
+    const uint64_t VALID_BIT = 1;
     uint64_t* page_table_pointers[5];
     uint64_t vpn_indices[5];
     pt = pt<<12;
@@ -92,7 +92,7 @@ uint64_t page_table_query(uint64_t pt, uint64_t vpn){
     }
 
     uint64_t valid_bit = page_table_pointers[4][vpn_indices[4]];
-    if ((valid_bit & VALID_BIT_MASK) == 0 || valid_bit == NO_MAPPING) {
+    if ((valid_bit & VALID_BIT) == 0 || valid_bit == NO_MAPPING) {
         return NO_MAPPING;
     }
 

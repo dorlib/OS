@@ -62,6 +62,8 @@ int main(int argc, char **argv)
 	assert(page_table_query(pt, 0xfffecafeeee) == NO_MAPPING);
 	assert(page_table_query(pt, 0xcafecafeeff) == NO_MAPPING);
 
+	printf("everything passed");
+
 	return 0;
 }
 

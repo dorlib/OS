@@ -355,12 +355,12 @@ int ampersand_handler(int count, char **arglist) {
 int signal_handler() {
     if (signal(SIGINT, SIG_DFL) == SIG_ERR) {
         fprintf(stderr, "Error!: SIGINT error\n");
-        exit(1);
+        return 0;
     }
 
     if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
         fprintf(stderr, "Error!: SIGCHLD error\n");
-        exit(1);
+        return 0;
     }
 
     return 1;

@@ -25,7 +25,6 @@ int redirect_handler(int count, char **pString);
 int append_handler(int count, char **pString);
 int general_handler(int count, char **pString);
 int signal_handler();
-int child_set_signal();
 int set_signal(int signum, void (*handler)(int));
 void sigint_handler(int signum);
 void sigchld_handler(int signum);
@@ -65,19 +64,6 @@ int set_signal(int signum, void (*handler)(int)) {
 
     if (sigaction(signum, &sa, NULL) == -1) {
         fprintf(stderr, "Error!: Failed to set signal handler for signal %d\n", signum);
-        return 1;
-    }
-
-    return 0;
-}
-
-int child_set_signal() {
-    struct sigaction sa;
-    sa.sa_handler = SIG_DFL;
-    sa.sa_flags = SA_RESTART;
-
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        fprintf(stderr, "Error!: Failed to set handle SIGINT \n");
         return 1;
     }
 
@@ -163,7 +149,6 @@ int append_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        child_set_signal();
         signal_handler();
 
         int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);

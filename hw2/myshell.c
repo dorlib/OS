@@ -353,12 +353,12 @@ int ampersand_handler(int count, char **arglist) {
 
 // Sets signal handlers for child process
 int signal_handler() {
-    if (signal(SIGINT, SIG_DFL) == SIG_ERR) {
+    if (set_signal(SIGINT, SIG_DFL) != 0) {
         fprintf(stderr, "Error!: SIGINT error\n");
         return 0;
     }
 
-    if (signal(SIGCHLD, SIG_DFL) == SIG_ERR) {
+    if (set_signal(SIGCHLD, SIG_DFL) != 0) {
         fprintf(stderr, "Error!: SIGCHLD error\n");
         return 0;
     }

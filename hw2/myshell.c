@@ -27,17 +27,11 @@ int append_handler(int count, char **pString);
 int general_handler(int count, char **pString);
 int signal_handler();
 void sigint_handler(int signum);
-void sigchld_handler(int signum);
 
 // Signal handler function for SIGINT (Ctrl+C)
 void sigint_handler(int signum) {
     printf("\n");  // Print a newline
     fflush(stdout);  // Flush stdout to ensure the newline is printed immediately
-}
-
-// Signal handler function for SIGCHLD to reap child processes
-void sigchld_handler(int signum) {
-    while (waitpid(-1, NULL, WNOHANG) > 0);
 }
 
 // Prepare the signal handling
@@ -59,17 +53,8 @@ int prepare(void) {
     }
 
     // Set the new signal handler for SIGINT
-    struct sigaction sa;
-    sa.sa_handler = sigint_handler;
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        fprintf(stderr, SIGACTION_ERROR);
-        exit(1);
-    }
-
-    // Set the new signal handler for SIGINT
     struct sigaction sa3;
-    sa3.sa_handler = sigchld_handler;
+    sa3.sa_handler = sigint_handler;
     sa3.sa_flags = SA_RESTART;
     if (sigaction(SIGINT, &sa3, NULL) == -1) {
         fprintf(stderr, SIGACTION_ERROR);

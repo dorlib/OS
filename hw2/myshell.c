@@ -161,7 +161,7 @@ int append_handler(int count, char **arglist) {
 
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            exit(0);
+            return 0;
         }
     }
 

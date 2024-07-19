@@ -25,46 +25,28 @@ int pipe_handler(int count, char **pString);
 int redirect_handler(int count, char **pString);
 int append_handler(int count, char **pString);
 int general_handler(int count, char **pString);
-int signal_handler(int is_background);
-void sigint_handler(int signum);
+int signal_handler();
 
-// Signal handler function for SIGINT (Ctrl+C)
-void sigint_handler(int signum) {
-    printf("\n");  // Print a newline
-    fflush(stdout);  // Flush stdout to ensure the newline is printed immediately
-}
-
+// Prepare the signal handling
 int prepare(void) {
-    struct sigaction sa;
-
-    // Set up the signal handler for SIGINT in the parent process (shell)
-    sa.sa_handler = SIG_IGN;  // Ignore SIGINT in the parent process
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
+    struct sigaction sa1;
+    sa1.sa_handler = SIG_IGN;
+    sa1.sa_flags = SA_RESTART;
+    if (sigaction(SIGINT, &sa1, NULL) == -1) {
         fprintf(stderr, SIGACTION_ERROR);
         exit(1);
     }
 
-    // Set up the signal handler for SIGCHLD to prevent the shell from terminating
-    sa.sa_handler = SIG_IGN;  // Ignore SIGCHLD
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+    struct sigaction sa2;
+    sa2.sa_handler = SIG_IGN;
+    sa2.sa_flags = SA_RESTART;
+    if (sigaction(SIGCHLD, &sa2, NULL) == -1) {
         fprintf(stderr, SIGACTION_ERROR);
         exit(1);
     }
-
-    // Set the new signal handler for SIGINT
-    sa.sa_handler = sigint_handler;
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        fprintf(stderr, SIGACTION_ERROR);
-        exit(1);
-    }
-
 
     return 0;
 }
-
 
 // Process the argument list and determine the correct handler
 int process_arglist(int count, char **arglist) {
@@ -99,7 +81,7 @@ int general_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        signal_handler(0);
+        signal_handler();
 
         int status = execvp(arglist[0], arglist);
         if (status < 0) {
@@ -145,7 +127,7 @@ int append_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        signal_handler(0);
+        signal_handler();
 
         int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd < 0) {
@@ -162,7 +144,7 @@ int append_handler(int count, char **arglist) {
 
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            return 0;
+            exit(0);
         }
     }
 
@@ -206,7 +188,7 @@ int redirect_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        signal_handler(0);
+        signal_handler();
 
         int fd = open(file, O_RDONLY);
         if (fd < 0) {
@@ -267,7 +249,7 @@ int pipe_handler(int count, char **arglist) {
     }
 
     if (pid1 == 0) {
-        signal_handler(0);
+        signal_handler();
 
         close(pipe_file_descriptors[0]);
         if (dup2(pipe_file_descriptors[1], STDOUT_FILENO) == -1) {
@@ -290,7 +272,7 @@ int pipe_handler(int count, char **arglist) {
     }
 
     if (pid2 == 0) {
-        signal_handler(0);
+        signal_handler();
 
         close(pipe_file_descriptors[1]);
         if (dup2(pipe_file_descriptors[0], STDIN_FILENO) == -1) {
@@ -335,7 +317,7 @@ int ampersand_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        signal_handler(1); // Set signal handlers for child process
+        signal_handler(); // Set signal handlers for child process
 
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
@@ -346,19 +328,14 @@ int ampersand_handler(int count, char **arglist) {
     return 1; // Parent returns immediately, child runs in the background
 }
 
-int signal_handler(int is_background) {
+// Sets signal handlers for child process
+int signal_handler() {
     struct sigaction sa;
-
-    if (is_background) {
-        sa.sa_handler = SIG_IGN;  // Ignore SIGINT in background processes
-    } else {
-        sa.sa_handler = SIG_DFL;  // Default handler (terminate) for foreground processes
-    }
+    sa.sa_handler = SIG_DFL;
     sa.sa_flags = SA_RESTART;
-
     if (sigaction(SIGINT, &sa, NULL) == -1) {
         fprintf(stderr, SIGACTION_ERROR);
-        return 1;
+        exit(1);
     }
 
     return 0;

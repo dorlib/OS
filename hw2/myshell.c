@@ -37,6 +37,12 @@ int prepare() {
         return 1;
     }
 
+    // Ignore SIGINT in the parent process
+    if (signal(SIGINT, SIG_IGN) == SIG_ERR) {
+        fprintf(stderr, "Error!: Failed to ignore SIGINT in parent\n");
+        return 1;
+    }
+
     return 0;
 }
 

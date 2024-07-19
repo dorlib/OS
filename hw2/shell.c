@@ -17,7 +17,7 @@ int main(void)
 {
 	if (prepare() != 0)
 		exit(1);
-	
+
 	while (1)
 	{
 		char** arglist = NULL;
@@ -29,14 +29,14 @@ int main(void)
 			free(line);
 			break;
 		}
-    
+
 		arglist = (char**) malloc(sizeof(char*));
 		if (arglist == NULL) {
 			printf("malloc failed: %s\n", strerror(errno));
 			exit(1);
 		}
 		arglist[0] = strtok(line, " \t\n");
-    
+
 		while (arglist[count] != NULL) {
 			++count;
 			arglist = (char**) realloc(arglist, sizeof(char*) * (count + 1));
@@ -44,22 +44,22 @@ int main(void)
 				printf("realloc failed: %s\n", strerror(errno));
 				exit(1);
 			}
-      
+
 			arglist[count] = strtok(NULL, " \t\n");
 		}
-    
+
 		if (count != 0) {
 			if (!process_arglist(count, arglist)) {
 				free(line);
 				free(arglist);
-				break;
+                break;
 			}
 		}
-    
+
 		free(line);
 		free(arglist);
 	}
-	
+
 	if (finalize() != 0)
 		exit(1);
 

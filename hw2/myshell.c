@@ -342,7 +342,7 @@ int ampersand_handler(int count, char **arglist) {
         signal_handler(); // Set signal handlers for child process
 
         if (execvp(arglist[0], arglist) < 0) {
-            fprintf(stderr, "Error!: failed to execute the command\n");
+            fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
             exit(0);
         }
     }

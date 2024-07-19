@@ -64,7 +64,7 @@ int set_signal(int signum, void (*handler)(int)) {
 
     if (sigaction(signum, &sa, NULL) == -1) {
         fprintf(stderr, "Error!: Failed to set signal handler for signal %d\n", signum);
-        return 1ls;
+        return 1;
     }
 
     return 0;

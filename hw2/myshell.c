@@ -170,10 +170,20 @@ int append_handler(int count, char **arglist) {
         }
     }
 
+    if (signal(SIGINT, SIG_IGN) == SIG_ERR) {
+        fprintf(stderr, "Error!: failed to ignore SIGINT\n");
+        return 0;
+    }
+
     if (waitpid(pid, &status, 0) < 0 && errno != EINTR && errno != ECHILD) {
         fprintf(stderr, "Error: error in parent process\n");
         return 0;
     }
+
+    if (signal(SIGINT, sigint_handler) == SIG_ERR) {
+        fprintf(stderr, "Error!: failed to restore sigint handler\n");
+        return 0;
+    } 
 
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
         return 0;

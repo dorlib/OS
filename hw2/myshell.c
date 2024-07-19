@@ -16,6 +16,7 @@
 // Error messages
 #define COMMAND_NOT_FOUND_ERROR "Error!: failed to execute the command or command does not exists.\n"
 #define FORK_ERROR "Error!: Failed to fork.\n"
+#define SIGACTION_ERROR "Error!: sigaction failed"
 
 // Function prototypes
 int controller(int count, char **pString);
@@ -25,40 +26,50 @@ int redirect_handler(int count, char **pString);
 int append_handler(int count, char **pString);
 int general_handler(int count, char **pString);
 int signal_handler();
+int set_signal(int signum, void (*handler)(int));
+void sigint_handler(int signum);
+void sigchld_handler(int signum);
 
 // Prepare the signal handling
-int prepare(void)
-{
-    /*
-    After this part, the Shell won't terminate upon SIGIN (we will change it in foreground child)
-    inspired by CodeValut: https://www.youtube.com/watch?v=jF-1eFhyz1U&t
-    */
-    struct sigaction shell_sa; /*A structure used to modify the action taken by a process on receipt of a signal.*/
-    shell_sa.sa_handler = SIG_IGN; /*Set up a signal handler to indicate that the corresponding signal should be ignored.*/
-    shell_sa.sa_flags = SA_RESTART;  /*Returning from a handler resumes the library function.*/
-    if (sigaction(SIGINT, &shell_sa, NULL) == -1)
-    {
-        /*Try to initialize the signal set to exclude all signals, if doen't work, gets here*/
-        fprintf(stderr, "Error: sigaction failed - %s\n", strerror(errno));
-        exit(1);
+int prepare() {
+    // Set SIGINT to custom handler (print newline)
+    if (set_signal(SIGINT, sigint_handler) != 0) {
+        return 1;
     }
 
-    /*
-    Zombie handler- The purpose of this particular signal handler is to avoid the creation of zombie processes
-    inspired by CodeValut: https://www.youtube.com/watch?v=jF-1eFhyz1U&t
-    */
-    struct sigaction zombie_sa; /*A structure used to modify the action taken by a process on receipt of a signal.*/
-    zombie_sa.sa_handler = SIG_IGN; /*Set up a signal handler to indicate that the corresponding signal should be ignored.*/
-    zombie_sa.sa_flags = SA_RESTART;  /*Returning from a handler resumes the library function.*/
-    if (sigaction(SIGCHLD, &zombie_sa, NULL) == -1)
-    {
-        /*Try to initialize the signal set to exclude all signals, if doen't work, gets here*/
-        fprintf(stderr, "Error: sigaction failed - %s\n", strerror(errno));
-        exit(1);
+    // Set SIGCHLD to custom handler (reap child processes)
+    if (set_signal(SIGCHLD, sigchld_handler) != 0) {
+        return 1;
     }
+
     return 0;
 }
 
+// Signal handler function for SIGCHLD to reap child processes
+void sigchld_handler(int signum) {
+    while (waitpid(-1, NULL, WNOHANG) > 0);
+}
+
+// Signal handler function for SIGINT (Ctrl+C)
+void sigint_handler(int signum) {
+    printf("\n");  // Print a newline
+    fflush(stdout);  // Flush stdout to ensure the newline is printed immediately
+}
+
+// Helper function to set signal handling
+int set_signal(int signum, void (*handler)(int)) {
+    struct sigaction sa;
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+
+    if (sigaction(signum, &sa, NULL) == -1) {
+        fprintf(stderr, "Error!: Failed to set signal handler for signal %d\n", signum);
+        return 1;
+    }
+
+    return 0;
+}
 
 // Process the argument list and determine the correct handler
 int process_arglist(int count, char **arglist) {
@@ -340,20 +351,17 @@ int ampersand_handler(int count, char **arglist) {
     return 1; // Parent returns immediately, child runs in the background
 }
 
-
 // Sets signal handlers for child process
 int signal_handler() {
-    struct sigaction foreground_sa; /*A structure used to modify the action taken by a process on receipt of a signal.*/
-    foreground_sa.sa_handler = SIG_DFL; /*Set up a signal handler to indicate that the corresponding signal should return to default.*/
-    foreground_sa.sa_flags = SA_RESTART;  /*Returning from a handler resumes the library function.*/
-    if (sigaction(SIGINT, &foreground_sa, NULL) == -1)
-    {
-        /*Try to initialize the signal set to exclude all signals, if doen't work, gets here*/
-        fprintf(stderr, "Error: sigaction failed - %s\n", strerror(errno));
+    struct sigaction sa;
+    sa.sa_handler = SIG_DFL;
+    sa.sa_flags = SA_RESTART;
+    if (sigaction(SIGINT, &sa, NULL) == -1) {
+        fprintf(stderr, SIGACTION_ERROR);
         exit(1);
     }
-    return 0;
 
+    return 0;
 }
 
 // Checks if a character exists in a string

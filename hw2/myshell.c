@@ -358,7 +358,7 @@ int signal_handler(int is_background) {
 
     if (sigaction(SIGINT, &sa, NULL) == -1) {
         fprintf(stderr, SIGACTION_ERROR);
-        exit(1);
+        return 1;
     }
 
     return 0;

@@ -149,7 +149,9 @@ int append_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        signal_handler();
+        if (!signal_handler()) {
+            exit(0);
+        }
 
         int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd < 0) {

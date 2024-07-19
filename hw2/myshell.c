@@ -129,7 +129,7 @@ int append_handler(int count, char **arglist) {
 
     // Find the append operator index
     for (append_index = 0; append_index < count; append_index++) {
-        if (strcmp(arglist[append_index], ">>") == 0) {
+        if (strcmp(arglist[append_index], APPEND) == 0) {
             break;
         }
     }
@@ -149,9 +149,7 @@ int append_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        if (!signal_handler()) {
-            exit(0);
-        }
+        signal_handler();
 
         int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd < 0) {

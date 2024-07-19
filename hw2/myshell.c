@@ -25,30 +25,21 @@ int pipe_handler(int count, char **pString);
 int redirect_handler(int count, char **pString);
 int append_handler(int count, char **pString);
 int general_handler(int count, char **pString);
-int signal_handler(int is_background);
-void sigint_handler(int signum);
-
-// Signal handler function for SIGINT (Ctrl+C)
-void sigint_handler(int signum) {
-    printf("\n");  // Print a newline
-    fflush(stdout);  // Flush stdout to ensure the newline is printed immediately
-}
+int signal_handler();
 
 int prepare(void) {
-    struct sigaction sa;
-
-    // Ignore SIGINT in the parent process
-    sa.sa_handler = SIG_IGN;
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
+    struct sigaction sa1;
+    sa1.sa_handler = SIG_IGN;
+    sa1.sa_flags = SA_RESTART;
+    if (sigaction(SIGINT, &sa1, NULL) == -1) {
         fprintf(stderr, SIGACTION_ERROR);
         return 1;
     }
 
-    // Ignore SIGCHLD to prevent zombies
-    sa.sa_handler = SIG_IGN;
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGCHLD, &sa, NULL) == -1) {
+    struct sigaction sa2;
+    sa2.sa_handler = SIG_IGN;
+    sa2.sa_flags = SA_RESTART;
+    if (sigaction(SIGCHLD, &sa2, NULL) == -1) {
         fprintf(stderr, SIGACTION_ERROR);
         return 1;
     }
@@ -89,12 +80,12 @@ int general_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        signal_handler(0);
+        signal_handler();
 
         int status = execvp(arglist[0], arglist);
         if (status < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            return 0;
+            exit(1);
         }
     }
 
@@ -135,24 +126,24 @@ int append_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        signal_handler(0);
+        signal_handler();
 
         int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd < 0) {
             fprintf(stderr, "Error: failed to open file for append\n");
-            exit(0);
+            exit(1);
         }
 
         if (dup2(fd, STDOUT_FILENO) < 0) {
             fprintf(stderr, "Error: failed to redirect stdout\n");
-            exit(0);
+            exit(1);
         }
 
         close(fd);
 
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            exit(0);
+            exit(1);
         }
     }
 
@@ -164,7 +155,6 @@ int append_handler(int count, char **arglist) {
     if (!WIFEXITED(status) || WEXITSTATUS(status) != 0) {
         return 0;
     }
-
     return 1;
 }
 
@@ -196,24 +186,24 @@ int redirect_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        signal_handler(0);
+        signal_handler();
 
         int fd = open(file, O_RDONLY);
         if (fd < 0) {
             fprintf(stderr, "Error!: failed to open file for input redirection\n");
-            return 0;
+            exit(1);
         }
 
         if (dup2(fd, STDIN_FILENO) < 0) {
             fprintf(stderr, "Error!: failed to redirect stdin\n");
-            return 0;
+            exit(1);
         }
 
         close(fd);
 
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            return 0;
+            exit(1);
         }
     }
 
@@ -257,19 +247,19 @@ int pipe_handler(int count, char **arglist) {
     }
 
     if (pid1 == 0) {
-        signal_handler(0);
+        signal_handler();
 
         close(pipe_file_descriptors[0]);
         if (dup2(pipe_file_descriptors[1], STDOUT_FILENO) == -1) {
             fprintf(stderr, "Error!: failed to redirect stdout\n");
-            _exit(0); // Terminate child process
+            _exit(1); // Terminate child process
         }
 
         close(pipe_file_descriptors[1]);
 
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            _exit(0); // Terminate child process
+            _exit(1); // Terminate child process
         }
     }
 
@@ -280,19 +270,19 @@ int pipe_handler(int count, char **arglist) {
     }
 
     if (pid2 == 0) {
-        signal_handler(0);
+        signal_handler();
 
         close(pipe_file_descriptors[1]);
         if (dup2(pipe_file_descriptors[0], STDIN_FILENO) == -1) {
             fprintf(stderr, "Error!: failed to redirect stdin\n");
-            _exit(0); // Terminate child process
+            _exit(1); // Terminate child process
         }
 
         close(pipe_file_descriptors[0]);
 
         if (execvp(arglist[pipe_index + 1], &arglist[pipe_index + 1]) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            _exit(0); // Terminate child process
+            _exit(1); // Terminate child process
         }
     }
 
@@ -325,30 +315,22 @@ int ampersand_handler(int count, char **arglist) {
     }
 
     if (pid == 0) {
-        signal_handler(1); // Set signal handlers for child process
-
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            exit(0);
+            exit(1);
         }
     }
 
     return 1; // Parent returns immediately, child runs in the background
 }
 
-int signal_handler(int is_background) {
+int signal_handler() {
     struct sigaction sa;
-
-    if (is_background) {
-        sa.sa_handler = SIG_IGN;  // Ignore SIGINT in background processes
-    } else {
-        sa.sa_handler = SIG_DFL;  // Default handler (terminate) for foreground processes
-    }
+    sa.sa_handler = SIG_DFL;
     sa.sa_flags = SA_RESTART;
-
     if (sigaction(SIGINT, &sa, NULL) == -1) {
-        fprintf(stderr, SIGACTION_ERROR);
-        return 1;
+	fprintf(stderr, "Error!: sigaction failed");
+	exit(1);
     }
 
     return 0;
@@ -381,22 +363,5 @@ int controller(int count, char **arglist) {
 }
 
 int finalize() {
-    int status;
-    pid_t pid;
-
-    // Wait for any remaining child processes to terminate
-    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
-        if (WIFEXITED(status)) {
-            printf("Child %d exited with status %d\n", pid, WEXITSTATUS(status));
-        } else if (WIFSIGNALED(status)) {
-            printf("Child %d was terminated by signal %d\n", pid, WTERMSIG(status));
-        }
-    }
-
-    if (pid == -1 && errno != ECHILD) {
-        fprintf(stderr, "Error!: waitpid failed\n");
-        return 1;
-    }
-
-    return 0;
+    return 0;	
 }

@@ -94,7 +94,7 @@ int general_handler(int count, char **arglist) {
         int status = execvp(arglist[0], arglist);
         if (status < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            return 0;
+            return 1;
         }
     }
 
@@ -140,19 +140,19 @@ int append_handler(int count, char **arglist) {
         int fd = open(file, O_WRONLY | O_CREAT | O_APPEND, 0644);
         if (fd < 0) {
             fprintf(stderr, "Error: failed to open file for append\n");
-            exit(0);
+            exit(1);
         }
 
         if (dup2(fd, STDOUT_FILENO) < 0) {
             fprintf(stderr, "Error: failed to redirect stdout\n");
-            exit(0);
+            exit(1);
         }
 
         close(fd);
 
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            return 0;
+            return 1;
         }
     }
 
@@ -201,12 +201,12 @@ int redirect_handler(int count, char **arglist) {
         int fd = open(file, O_RDONLY);
         if (fd < 0) {
             fprintf(stderr, "Error!: failed to open file for input redirection\n");
-            return 0;
+            return 1;
         }
 
         if (dup2(fd, STDIN_FILENO) < 0) {
             fprintf(stderr, "Error!: failed to redirect stdin\n");
-            return 0;
+            return 1;
         }
 
         close(fd);
@@ -262,14 +262,14 @@ int pipe_handler(int count, char **arglist) {
         close(pipe_file_descriptors[0]);
         if (dup2(pipe_file_descriptors[1], STDOUT_FILENO) == -1) {
             fprintf(stderr, "Error!: failed to redirect stdout\n");
-            _exit(0); // Terminate child process
+            _exit(1); // Terminate child process
         }
 
         close(pipe_file_descriptors[1]);
 
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            _exit(0); // Terminate child process
+            _exit(1); // Terminate child process
         }
     }
 
@@ -285,14 +285,14 @@ int pipe_handler(int count, char **arglist) {
         close(pipe_file_descriptors[1]);
         if (dup2(pipe_file_descriptors[0], STDIN_FILENO) == -1) {
             fprintf(stderr, "Error!: failed to redirect stdin\n");
-            _exit(0); // Terminate child process
+            _exit(1); // Terminate child process
         }
 
         close(pipe_file_descriptors[0]);
 
         if (execvp(arglist[pipe_index + 1], &arglist[pipe_index + 1]) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            _exit(0); // Terminate child process
+            _exit(1); // Terminate child process
         }
     }
 
@@ -329,7 +329,7 @@ int ampersand_handler(int count, char **arglist) {
 
         if (execvp(arglist[0], arglist) < 0) {
             fprintf(stderr, COMMAND_NOT_FOUND_ERROR);
-            exit(0);
+            exit(1);
         }
     }
 

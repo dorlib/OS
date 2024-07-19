@@ -60,7 +60,6 @@ void sigint_handler(int signum) {
 int set_signal(int signum, void (*handler)(int)) {
     struct sigaction sa;
     sa.sa_handler = handler;
-    sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
 
     if (sigaction(signum, &sa, NULL) == -1) {

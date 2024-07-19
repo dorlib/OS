@@ -14,7 +14,7 @@
 #define APPEND ">>"
 
 // Error messages
-#define COMMAND_NOT_FOUND_ERROR "Error!: failed to execute the command or command does not exists.\n"
+#define COMMAND_NOT_FOUND_ERROR "Error!: failed to execute the command or command does not exist.\n"
 #define FORK_ERROR "Error!: Failed to fork.\n"
 #define SIGACTION_ERROR "Error!: sigaction failed"
 
@@ -59,7 +59,7 @@ int prepare(void) {
 // Process the argument list and determine the correct handler
 int process_arglist(int count, char **arglist) {
     if (count <= 0) {
-        fprintf(stderr, "Error! command not given \n");
+        fprintf(stderr, "Error! command not given\n");
         return 0;
     }
 

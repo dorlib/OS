@@ -26,7 +26,39 @@ int redirect_handler(int count, char **pString);
 int append_handler(int count, char **pString);
 int general_handler(int count, char **pString);
 int signal_handler();
+int set_signal(int signum, void (*handler)(int));
 void sigint_handler(int signum);
+void sigchld_handler(int signum);
+
+// Prepare the signal handling
+int prepare() {
+    // Set SIGINT to custom handler (print newline)
+    if (set_signal(SIGINT, SIG_IGN) != 0) {
+        return 1;
+    }
+
+    // Set SIGCHLD to custom handler (reap child processes)
+    if (set_signal(SIGCHLD, SIG_IGN) != 0) {
+        return 1;
+    }
+
+    // Set SIGINT to custom handler (print newline)
+    if (set_signal(SIGINT, sigint_handler) != 0) {
+        return 1;
+    }
+
+    // Set SIGCHLD to custom handler (reap child processes)
+    if (set_signal(SIGCHLD, sigchld_handler) != 0) {
+        return 1;
+    }
+
+    return 0;
+}
+
+// Signal handler function for SIGCHLD to reap child processes
+void sigchld_handler(int signum) {
+    while (waitpid(-1, NULL, WNOHANG) > 0);
+}
 
 // Signal handler function for SIGINT (Ctrl+C)
 void sigint_handler(int signum) {
@@ -34,32 +66,16 @@ void sigint_handler(int signum) {
     fflush(stdout);  // Flush stdout to ensure the newline is printed immediately
 }
 
-
-// Prepare the signal handling
-int prepare(void) {
-    struct sigaction sa1;
-    sa1.sa_handler = SIG_IGN;
-    sa1.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa1, NULL) == -1) {
-        fprintf(stderr, SIGACTION_ERROR);
-        exit(1);
-    }
-
-    struct sigaction sa2;
-    sa2.sa_handler = SIG_IGN;
-    sa2.sa_flags = SA_RESTART;
-    if (sigaction(SIGCHLD, &sa2, NULL) == -1) {
-        fprintf(stderr, SIGACTION_ERROR);
-        exit(1);
-    }
-
-    // Set the new signal handler for SIGINT
+// Helper function to set signal handling
+int set_signal(int signum, void (*handler)(int)) {
     struct sigaction sa;
-    sa.sa_handler = sigint_handler;
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
-        fprintf(stderr, SIGACTION_ERROR);
-        exit(1);
+
+    if (sigaction(signum, &sa, NULL) == -1) {
+        fprintf(stderr, "Error!: Failed to set signal handler for signal %d\n", signum);
+        return 1;
     }
 
     return 0;

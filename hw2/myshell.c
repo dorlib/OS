@@ -67,13 +67,11 @@ int prepare(void) {
         exit(1);
     }
 
-    return 0;
-
     // Set the new signal handler for SIGINT
-    struct sigaction sa;
-    sa.sa_handler = sigchld_handler;
-    sa.sa_flags = SA_RESTART;
-    if (sigaction(SIGINT, &sa, NULL) == -1) {
+    struct sigaction sa3;
+    sa3.sa_handler = sigchld_handler;
+    sa3.sa_flags = SA_RESTART;
+    if (sigaction(SIGINT, &sa3, NULL) == -1) {
         fprintf(stderr, SIGACTION_ERROR);
         exit(1);
     }

@@ -12,10 +12,10 @@
 typedef struct channel {
     unsigned int id;
     int minor;
-    char message[MAX_MESSAGE_SIZE];
+    char message[MAX_MSG_SIZE];
     int msg_size;
     struct channel *next;
-} channel;
+} channel_t;
 
 typedef struct message_slot {
     int minor;

@@ -11,7 +11,6 @@
 
 typedef struct channel {
     unsigned int id;
-    int minor;
     char message[MAX_MSG_SIZE];
     int msg_size;
     struct channel *next;

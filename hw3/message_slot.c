@@ -60,7 +60,8 @@ static long device_ioctl(struct file *file, unsigned int ioctl_command_id, unsig
     if (ioctl_command_id != MSG_SLOT_CHANNEL || channel_id == 0) {
         return -EINVAL;
     }
-    channel_t *channel = get_channel(slot, channel_id);
+    channel_t *channel;
+    channel = get_channel(slot, channel_id);
     if (channel == NULL) {
         channel = kmalloc(sizeof(channel_t), GFP_KERNEL);
         if (!channel) return -ENOMEM;
@@ -100,7 +101,7 @@ static struct file_operations fops = {
     .write = device_write,
 };
 
-int init_module(void) {
+static int __init_message_slot_init(void) {
     int ret = register_chrdev(MAJOR_NUM, DEVICE_NAME, &fops);
     if (ret < 0) {
         printk(KERN_ERR "Failed to register device with %d\n", MAJOR_NUM);
@@ -110,7 +111,7 @@ int init_module(void) {
     return 0;
 }
 
-void cleanup_module(void) {
+static void __exit_message_slot_exit(void) {
     message_slot_t *slot = slots;
     while (slot != NULL) {
         message_slot_t *tmp_slot = slot;
@@ -127,5 +128,5 @@ void cleanup_module(void) {
     printk(KERN_INFO "Message slot module unloaded\n");
 }
 
-module_init(init_module);
-module_exit(cleanup_module);
+module_init(message_slot_init);
+module_exit(message_slot_exit);
